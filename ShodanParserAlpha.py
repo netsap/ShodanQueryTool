@@ -48,6 +48,7 @@ class Services(Base):
     modified = Column(String)
     vendor_id = Column(String)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
+    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
 
 class Vulns(Base):
     __tablename__ = 'vulns'
@@ -56,7 +57,9 @@ class Vulns(Base):
     cve = Column(String)
     description = Column(String)
     reference = Column(String)
+    host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
 
 Base.metadata.create_all(engine)
 
