@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker
 import shodan
 from time import sleep
 
+
+
 engine = create_engine('sqlite:///test2.db')
 meta = MetaData()
 Base = declarative_base()
@@ -79,8 +81,6 @@ exclude_http_title = ["Document Moved", "Bad Request", "Home Loading Page", "web
                       "Error response", "Home Loading Page", "Inloggen", "Login", "index", "Web Client"]
 
 # Convert Shodan returned record to a cleaned construct
-
-
 def convert_shodan_record(item):
     timestamp = item["timestamp"]
     port = item.get("port", 0)
@@ -151,15 +151,15 @@ def convert_shodan_record(item):
                 "data": data
             }
 
-
 def checkOrgID(org):
     orgIDResult = session.query(Organisation).filter(Organisation.name == org).one_or_none()
-    global org_id
+    
     if orgIDResult is None:
         insOrg = Organisation(name = org)
 
         session.add(insOrg)
         session.commit()
+
         org_id = insOrg.id
         return org_id
     else:
@@ -191,12 +191,12 @@ def search(ipFile):
     for line in ipFile:
 
         result = api.host(line)
-
+        
         org = result.get("org", "n/a")
-        checkOrgID(org)
+        org_id = checkOrgID(org)
 
         ip_str = result["ip_str"]
-        checkHostID(ip_str, result, org, org_id)
+        host_id = checkHostID(ip_str, result, org, org_id)
 
         hostname_res = result.get("hostnames", "n/a")
         try:
@@ -214,7 +214,7 @@ def search(ipFile):
         for item in result["data"]:
             shodan_data = convert_shodan_record(item)
 
-        hostname_res = result.get("hostnames", "n/a")
+
         vulns = result.get("vulns", "n/a")
 
 
