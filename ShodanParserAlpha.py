@@ -54,6 +54,7 @@ class Vulns(Base):
 
     id = Column(Integer, primary_key=True)
     cve = Column(String)
+    cvss = Column(Integer)
     description = Column(String)
     reference = Column(String)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
@@ -151,6 +152,5 @@ def search(ipFile):
         for item in result["data"]:
             service_id = checkService(item, org_id, host_id)
 
-        vulns = result.get("vulns", "n/a")
 
 search(ipFile)
