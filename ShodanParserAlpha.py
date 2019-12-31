@@ -46,8 +46,8 @@ class Services(Base):
     created = Column(String)
     modified = Column(String)
     vendor_id = Column(String)
-    host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
+    host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
 
 class Vulns(Base):
     __tablename__ = 'vulns'
@@ -55,12 +55,13 @@ class Vulns(Base):
     id = Column(Integer, primary_key=True)
     cve = Column(String)
     cvss = Column(Integer)
-    description = Column(String)
+    summary = Column(String)
     reference = Column(String)
+    verified = Column(Integer)
+    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
-    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
-
+    
 Base.metadata.create_all(engine)
 
 def checkOrg(org):
@@ -107,6 +108,7 @@ def checkService(item, org_id, host_id):
     data = item.get("data", "")
     shodan_meta = item.get("_shodan")
     shodan_module = shodan_meta.get("module", "n/a")
+    vulns = item.get("vulns", None)
 
     try:
         domains = item["domains"]
@@ -136,6 +138,30 @@ def checkService(item, org_id, host_id):
     session.commit()
     
     service_id = insService.id
+
+    if vulns:
+        for cve,v in vulns.items():
+            cvss = v.get('cvss')
+            summary = v.get('summary')
+
+            reference = v.get('references')
+            reference = ','.join(map(str, reference)) 
+            
+            veri = v.get('verified')
+            if veri == False:
+                verified = 0
+            elif veri == True:
+                verified = 1
+
+            insVuls = Vulns(cve = cve, cvss = cvss, summary = summary, reference = reference,\
+                verified = verified, organisation_id = org_id, host_id = host_id, \
+                    service_id = service_id)
+            session.add(insVuls)
+            session.commit()
+
+    else:
+        print ('novulns' + str(service_id))
+
     return service_id
 
 def search(ipFile):
