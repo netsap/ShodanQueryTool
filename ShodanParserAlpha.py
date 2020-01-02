@@ -3,6 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import shodan
 from time import sleep
+from datetime import datetime
+import uuid
 
 engine = create_engine('sqlite:///test2.db')
 meta = MetaData()
@@ -45,6 +47,8 @@ class Services(Base):
     data = Column(String)
     created = Column(String)
     modified = Column(String)
+    #needs indexing
+    shodan_id = Column(String)
     vendor_id = Column(String)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
@@ -108,8 +112,9 @@ def checkService(item, org_id, host_id):
     data = item.get("data", "")
     shodan_meta = item.get("_shodan")
     shodan_module = shodan_meta.get("module", "n/a")
+    shodan_id = shodan_meta.get("id")
     vulns = item.get("vulns", None)
-
+    
     try:
         domains = item["domains"]
         domain = domains[0]
@@ -128,46 +133,75 @@ def checkService(item, org_id, host_id):
     product = product.strip("/\n,/\r").replace("&nbsp;", " ").strip()
     vendor_id = vendor_id.strip("/\n,/\r").replace("&nbsp;", " ").strip()
     device_type = device_type.strip("/\n,/\r").replace("&nbsp;", " ").strip()
+    
+    if shodan_id == None:
+        print (f'Shodan.ID Field is empty, the following data will not be inserted \n \
+        Port: {port} \n Transport: {transport} \n Product: {product} \n Device Type: {device_type} \n \
+        Vendor ID: {vendor_id} \n Shodan Module: {shodan_module} \n Vulns: {vulns} \n')
+        service_id = None
+        return service_id
+    
+    shodanIDCheck = session.query(Services).filter(Services.shodan_id == shodan_id).one_or_none()
 
-    insService = Services(port = port, transport = transport, product = product,\
+    if shodanIDCheck == None:
+        modified = ("n/a")
+
+        insService = Services(port = port, transport = transport, product = product,\
+            device_type = device_type, shodan_module = shodan_module, hostname = hostname,\
+                domain = domain, data = data, created = timestamp, modified = modified, \
+                    shodan_id = shodan_id,vendor_id = vendor_id, host_id = host_id, organisation_id = org_id)
+        
+        session.add(insService)
+        session.commit()
+        
+        service_id = insService.id
+
+        if vulns:
+            for cve,v in vulns.items():
+                cvss = v.get('cvss')
+                summary = v.get('summary')
+
+                reference = v.get('references')
+                reference = ','.join(map(str, reference)) 
+                
+                veri = v.get('verified')
+                if veri == False:
+                    verified = 0
+                elif veri == True:
+                    verified = 1
+
+                insVuls = Vulns(cve = cve, cvss = cvss, summary = summary, reference = reference,\
+                    verified = verified, organisation_id = org_id, host_id = host_id, \
+                        service_id = service_id)
+                session.add(insVuls)
+                session.commit()
+    
+
+        else:
+            print ('No Vulns for for Service ID: ' + str(service_id))
+
+    elif timestamp > shodanIDCheck.created:
+
+        updService = Services(port = port, transport = transport, product = product,\
         device_type = device_type, shodan_module = shodan_module, hostname = hostname,\
-            domain = domain, data = data, created = timestamp, modified = timestamp, \
-                vendor_id = vendor_id, host_id = host_id, organisation_id = org_id)
-    
-    session.add(insService)
-    session.commit()
-    
-    service_id = insService.id
-
-    if vulns:
-        for cve,v in vulns.items():
-            cvss = v.get('cvss')
-            summary = v.get('summary')
-
-            reference = v.get('references')
-            reference = ','.join(map(str, reference)) 
-            
-            veri = v.get('verified')
-            if veri == False:
-                verified = 0
-            elif veri == True:
-                verified = 1
-
-            insVuls = Vulns(cve = cve, cvss = cvss, summary = summary, reference = reference,\
-                verified = verified, organisation_id = org_id, host_id = host_id, \
-                    service_id = service_id)
-            session.add(insVuls)
-            session.commit()
+            domain = domain, data = data,  modified = timestamp, \
+                shodan_id = shodan_id, vendor_id = vendor_id)
+        
+        session.query(Services).update(updService)
+        session.commit()
+        service_id = updService.id
 
     else:
-        print ('novulns' + str(service_id))
+        service_id = shodanIDCheck.id
 
     return service_id
 
 def search(ipFile):
     for line in ipFile:
-
-        result = api.host(line)
+        if 'city:' in line:
+            result = api.search(line)
+        else:
+            result = api.host(line)
         
         org = result.get("org", "n/a")
         org_id = checkOrg(org)
