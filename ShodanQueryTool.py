@@ -6,7 +6,7 @@ from time import sleep
 from datetime import datetime
 import uuid
 
-engine = create_engine('sqlite:///test2.db')
+engine = create_engine('sqlite:///QueryTool.db')
 meta = MetaData()
 Base = declarative_base()
 Session = sessionmaker(bind = engine)
@@ -31,7 +31,6 @@ class Hosts(Base):
     id = Column(Integer, primary_key=True)
     ip_str = Column(String)
     asn = Column(String)
-    org = Column(String)
     country_code = Column(String)
     city = Column(String)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
@@ -43,7 +42,6 @@ class Services(Base):
     port = Column(String)
     transport = Column(String)
     product = Column(String)
-    device_type = Column(String)
     shodan_module = Column(String)
     hostname = Column(String)
     domain = Column(String)
@@ -73,7 +71,7 @@ Base.metadata.create_all(engine)
 
 def logCheck():
     if logged == True:
-        print ('Some services could not be added, check log.txt')
+        print ('Entries have been added to log.txt')
     
 def checkOrg(org):
     orgIDResult = session.query(Organisation).filter(Organisation.name == org).one_or_none()
@@ -96,10 +94,11 @@ def checkHost(ip_str, result, org, org_id):
     #if the ip exists in the hosts table, grab the ID, if not then enter data as usual
     if hostIDResult is None:
         asn = result.get("asn", "n/a")
-        city = result.get("city", "n/a")
-        country_code = result.get("country_code", "n/a")
+        resultLocation = result['location']
+        city = resultLocation.get("city", "n/a")
+        country_code = resultLocation.get("country_code", "n/a")
 
-        insHosts = Hosts(ip_str = ip_str, asn = asn, org = org_id, country_code = country_code, city = city, organisation_id = org_id)
+        insHosts = Hosts(ip_str = ip_str, asn = asn, country_code = country_code, city = city, organisation_id = org_id)
         session.add(insHosts)
         session.commit()
         
@@ -115,7 +114,6 @@ def checkService(result, org_id, host_id, org):
     port = result.get("port", 0)
     transport = result.get("transport", "n/a")
     product = result.get("product", "n/a")
-    device_type = result.get("device_type", "n/a")
     vendor_id = result.get("vendor_id", "n/a")
     data = result.get("data", "")
     shodan_meta = result.get("_shodan")
@@ -137,14 +135,13 @@ def checkService(result, org_id, host_id, org):
     if hostname is None or hostname == "":
         hostname = "n/a"
 
-    # Clean up unwanted strings from product, vendor and device_type
+    # Clean up unwanted strings from product and vendor 
     product = product.strip("/\n,/\r").replace("&nbsp;", " ").strip()
     vendor_id = vendor_id.strip("/\n,/\r").replace("&nbsp;", " ").strip()
-    device_type = device_type.strip("/\n,/\r").replace("&nbsp;", " ").strip()
     
     if shodan_id == None:
         logged = True
-        logFile.write(f'\nShodan.ID Field is empty, the following data will not be inserted \ntimestamp {datetime.now()}\nPort: {port} \nTransport: {transport} \nProduct: {product} \nOrganisation: {org} \nOrg_ID: {org_id} \nHost_ID: {host_id} \nDevice Type: {device_type} \nVendor ID: {vendor_id} \nShodan Module: {shodan_module} \nVulns: {vulns} \n')
+        logFile.write(f'\nShodan.ID Field is empty, the following data will not be inserted \nTimestamp: {datetime.now()}\nPort: {port} \nTransport: {transport} \nProduct: {product} \nOrganisation: {org} \nOrg_ID: {org_id} \nHost_ID: {host_id} \nVendor ID: {vendor_id} \nShodan Module: {shodan_module} \nVulns: {vulns} \n')
         service_id = None
         return service_id
     
@@ -154,7 +151,7 @@ def checkService(result, org_id, host_id, org):
         modified = ("n/a")
 
         insService = Services(port = port, transport = transport, product = product,\
-            device_type = device_type, shodan_module = shodan_module, hostname = hostname,\
+            shodan_module = shodan_module, hostname = hostname,\
                 domain = domain, data = data, created = timestamp, modified = modified, \
                     shodan_id = shodan_id,vendor_id = vendor_id, host_id = host_id, organisation_id = org_id)
         
@@ -183,17 +180,20 @@ def checkService(result, org_id, host_id, org):
                 session.add(insVuls)
                 session.commit()
         else:
-            print ('No Vulns for for Service ID: ' + str(service_id))
+            logFile.write('\nNo Vulns for for Service ID: ' + str(service_id) +'\nTimestamp: ' +str(datetime.now()) + '\n')
+            logged = True
 
     elif timestamp > shodanIDCheck.created:
         updService = Services(port = port, transport = transport, product = product,\
-        device_type = device_type, shodan_module = shodan_module, hostname = hostname,\
-            domain = domain, data = data,  modified = timestamp, \
-                shodan_id = shodan_id, vendor_id = vendor_id)
+            shodan_module = shodan_module, hostname = hostname,domain = domain, data = data,\
+                  modified = timestamp, shodan_id = shodan_id, vendor_id = vendor_id)
         
         session.query(Services).update(updService)
         session.commit()
         service_id = updService.id
+
+        logFile.write('Service ID: ' + str(service_id) + ' has been updated' + '\nTimestamp: ' + str(datetime.now()))
+        logged = True
 
     else:
         service_id = shodanIDCheck.id

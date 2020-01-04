@@ -1,4 +1,4 @@
 log.txt
-test2.db
+*.db
 queryFile
 .DS_Store
