@@ -14,7 +14,7 @@ session = Session()
 
 api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
 
-ipFile = open('ipFile', 'r')
+queryFile = open('queryFile', 'r')
 logFile = open('log.txt', 'a')
 
 logged = False
@@ -200,8 +200,8 @@ def checkService(result, org_id, host_id, org):
 
     return service_id
 
-def search(ipFile):
-    for line in ipFile:
+def search(queryFile):
+    for line in queryFile:
         results = api.search(line, limit=None)
 
         for result in results['matches']:
@@ -212,5 +212,5 @@ def search(ipFile):
             host_id = checkHost(ip_str, result, org, org_id)
 
             checkService(result, org_id, host_id, org)
-search(ipFile)
+search(queryFile)
 logCheck()
