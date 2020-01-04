@@ -15,6 +15,9 @@ session = Session()
 api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
 
 ipFile = open('ipFile', 'r')
+logFile = open('log.txt', 'a')
+
+logged = False
 
 class Organisation(Base):
     __tablename__ = 'organisation'
@@ -68,6 +71,10 @@ class Vulns(Base):
     
 Base.metadata.create_all(engine)
 
+def logCheck():
+    if logged == True:
+        print ('Some services could not be added, check log.txt')
+    
 def checkOrg(org):
     orgIDResult = session.query(Organisation).filter(Organisation.name == org).one_or_none()
     
@@ -102,26 +109,27 @@ def checkHost(ip_str, result, org, org_id):
         host_id = hostIDResult.id
         return host_id
 
-def checkService(item, org_id, host_id):
-    timestamp = item["timestamp"]
-    port = item.get("port", 0)
-    transport = item.get("transport", "n/a")
-    product = item.get("product", "n/a")
-    device_type = item.get("device_type", "n/a")
-    vendor_id = item.get("vendor_id", "n/a")
-    data = item.get("data", "")
-    shodan_meta = item.get("_shodan")
+def checkService(result, org_id, host_id, org):
+    global logged
+    timestamp = result["timestamp"]
+    port = result.get("port", 0)
+    transport = result.get("transport", "n/a")
+    product = result.get("product", "n/a")
+    device_type = result.get("device_type", "n/a")
+    vendor_id = result.get("vendor_id", "n/a")
+    data = result.get("data", "")
+    shodan_meta = result.get("_shodan")
     shodan_module = shodan_meta.get("module", "n/a")
     shodan_id = shodan_meta.get("id")
-    vulns = item.get("vulns", None)
+    vulns = result.get("vulns", None)
     
     try:
-        domains = item["domains"]
+        domains = result["domains"]
         domain = domains[0]
     except:
         domain = ""
 
-    hostname_res = item.get("hostnames", "n/a")
+    hostname_res = result.get("hostnames", "n/a")
     if len(hostname_res) > 0:
         hostname = hostname_res[0]
     else:
@@ -135,9 +143,8 @@ def checkService(item, org_id, host_id):
     device_type = device_type.strip("/\n,/\r").replace("&nbsp;", " ").strip()
     
     if shodan_id == None:
-        print (f'Shodan.ID Field is empty, the following data will not be inserted \n \
-        Port: {port} \n Transport: {transport} \n Product: {product} \n Device Type: {device_type} \n \
-        Vendor ID: {vendor_id} \n Shodan Module: {shodan_module} \n Vulns: {vulns} \n')
+        logged = True
+        logFile.write(f'\nShodan.ID Field is empty, the following data will not be inserted \ntimestamp {datetime.now()}\nPort: {port} \nTransport: {transport} \nProduct: {product} \nOrganisation: {org} \nOrg_ID: {org_id} \nHost_ID: {host_id} \nDevice Type: {device_type} \nVendor ID: {vendor_id} \nShodan Module: {shodan_module} \nVulns: {vulns} \n')
         service_id = None
         return service_id
     
@@ -175,13 +182,10 @@ def checkService(item, org_id, host_id):
                         service_id = service_id)
                 session.add(insVuls)
                 session.commit()
-    
-
         else:
             print ('No Vulns for for Service ID: ' + str(service_id))
 
     elif timestamp > shodanIDCheck.created:
-
         updService = Services(port = port, transport = transport, product = product,\
         device_type = device_type, shodan_module = shodan_module, hostname = hostname,\
             domain = domain, data = data,  modified = timestamp, \
@@ -198,19 +202,15 @@ def checkService(item, org_id, host_id):
 
 def search(ipFile):
     for line in ipFile:
-        if 'city:' in line:
-            result = api.search(line)
-        else:
-            result = api.host(line)
-        
-        org = result.get("org", "n/a")
-        org_id = checkOrg(org)
+        results = api.search(line, limit=None)
 
-        ip_str = result["ip_str"]
-        host_id = checkHost(ip_str, result, org, org_id)
+        for result in results['matches']:
+            org = result.get("org", "n/a")
+            org_id = checkOrg(org)
 
-        for item in result["data"]:
-            service_id = checkService(item, org_id, host_id)
+            ip_str = result["ip_str"]
+            host_id = checkHost(ip_str, result, org, org_id)
 
-
+            checkService(result, org_id, host_id, org)
 search(ipFile)
+logCheck()
