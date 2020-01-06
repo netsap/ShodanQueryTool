@@ -4,7 +4,6 @@ from sqlalchemy.orm import sessionmaker, relationship
 import shodan
 from time import sleep
 from datetime import datetime
-import uuid
 
 engine = create_engine('sqlite:///QueryTool.db')
 meta = MetaData()
