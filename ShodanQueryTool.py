@@ -25,9 +25,9 @@ class Organisation(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
-    hosts = relationship('Hosts')
-    services = relationship('Services')
-    vulns = relationship('Vulns')
+    hosts = relationship('Hosts', cascade = 'all, delete, delete-orphan')
+    services = relationship('Services', cascade = 'all, delete, delete-orphan')
+    vulns = relationship('Vulns', cascade = 'all, delete, delete-orphan')
     
 
 class Hosts(Base):
@@ -220,7 +220,14 @@ def search(queryFile):
 
 search(queryFile)
 logCheck()
+
 #queryTest = session.query(Organisation).get(1)
+
+#Test to delete an Organisation along with all its entries
+#session.delete(queryTest)
+#session.commit()
+
+#Accessing row data via the ORM
 #for row in queryTest.hosts:
 #    print (row.id)
 #for row in queryTest.services:
