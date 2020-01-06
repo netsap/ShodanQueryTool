@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey, MetaData, select
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 import shodan
 from time import sleep
 from datetime import datetime
@@ -25,6 +25,11 @@ class Organisation(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
 
+    hosts = relationship('Hosts')
+    services = relationship('Services')
+    vulns = relationship('Vulns')
+    
+
 class Hosts(Base):
     __tablename__ = 'hosts'
 
@@ -48,7 +53,6 @@ class Services(Base):
     data = Column(String)
     created = Column(String)
     modified = Column(String)
-    #needs indexing
     shodan_id = Column(String)
     vendor_id = Column(String)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
@@ -83,6 +87,7 @@ def checkOrg(org):
         session.commit()
 
         org_id = insOrg.id
+
         return org_id
     else:
         org_id = orgIDResult.id
@@ -212,5 +217,13 @@ def search(queryFile):
             host_id = checkHost(ip_str, result, org, org_id)
 
             checkService(result, org_id, host_id, org)
+
 search(queryFile)
 logCheck()
+#orgTest = session.query(Organisation).get(28)
+#for row in orgTest.hosts:
+#    print (row.__dict__)
+#for row in orgTest.services:
+#    print (row.__dict__)
+#for row in orgTest.vulns:
+#    print (row.__dict__)
