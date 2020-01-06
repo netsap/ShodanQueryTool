@@ -33,7 +33,7 @@ class Hosts(Base):
     __tablename__ = 'hosts'
 
     id = Column(Integer, primary_key=True)
-    ip_str = Column(String)
+    ip_str = Column(String, nullable=False)
     asn = Column(String)
     country_code = Column(String)
     city = Column(String)
@@ -43,7 +43,7 @@ class Services(Base):
     __tablename__ = 'services'
 
     id = Column(Integer, primary_key=True)
-    port = Column(String)
+    port = Column(String, nullable=False)
     transport = Column(String)
     product = Column(String)
     shodan_module = Column(String)
@@ -52,7 +52,7 @@ class Services(Base):
     data = Column(String)
     created = Column(String)
     modified = Column(String)
-    shodan_id = Column(String)
+    shodan_id = Column(String, nullable=False)
     vendor_id = Column(String)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
