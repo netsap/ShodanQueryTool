@@ -220,10 +220,10 @@ def search(queryFile):
 
 search(queryFile)
 logCheck()
-#orgTest = session.query(Organisation).get(28)
-#for row in orgTest.hosts:
+#queryTest = session.query(Organisation).get(1)
+#for row in queryTest.hosts:
+#    print (row.id)
+#for row in queryTest.services:
 #    print (row.__dict__)
-#for row in orgTest.services:
-#    print (row.__dict__)
-#for row in orgTest.vulns:
+#for row in queryTest.vulns:
 #    print (row.__dict__)
