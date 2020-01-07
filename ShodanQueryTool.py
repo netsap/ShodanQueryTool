@@ -28,7 +28,6 @@ class Organisation(Base):
     services = relationship('Services', cascade = 'all, delete, delete-orphan')
     vulns = relationship('Vulns', cascade = 'all, delete, delete-orphan')
     
-
 class Hosts(Base):
     __tablename__ = 'hosts'
 
@@ -93,7 +92,6 @@ def queryInput():
                     print (row)
             except exc.OperationalError:
                 print ('\nInvalid Query')
-
 
 def logCheck():
     if logged == True:
