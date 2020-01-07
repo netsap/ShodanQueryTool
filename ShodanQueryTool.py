@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey, MetaData, select
+from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey, MetaData, select, exc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import shodan
@@ -71,6 +71,43 @@ class Vulns(Base):
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
     
 Base.metadata.create_all(engine)
+
+def queryInput():
+    con = engine.connect()
+
+    while True:
+        query = input('\nType your Query Below\n').upper()
+
+        if 'UPDATE'in query:
+            print('You may only write select statements')
+        elif 'DELETE' in query:
+            print('You may only write select statements')
+        elif 'INSERT' in query:
+            print('You may only write select statements')
+        elif 'CREATE DATABASE' in query:
+            print('You may only write select statements')
+        elif 'CREATE TABLE' in query:
+            print('You may only write select statements')
+        elif 'ALTER DATABASE' in query:
+            print('You may only write select statements')
+        elif 'DROP TABLE' in query:
+            print('You may only write select statements')
+        elif 'ALTER TABLE' in query:
+            print('You may only write select statements')
+        elif 'CREATE INDEX' in query:
+            print('You may only write select statements')
+        elif 'DROP INDEX' in query:
+            print('You may only write select statements')
+        
+        else:
+            try:
+                rs = con.execute(query)
+
+                for row in rs:
+                    print (row)
+            except exc.OperationalError:
+                print ('\nInvalid Query')
+
 
 def logCheck():
     if logged == True:
@@ -219,6 +256,7 @@ def search(queryFile):
 
 search(queryFile)
 logCheck()
+queryInput()
 
 #queryTest = session.query(Organisation).get(1)
 
