@@ -76,33 +76,19 @@ def queryInput():
     con = engine.connect()
 
     while True:
-        query = input('\nType your Query Below\n').upper()
+        query = input('\nType your Query Below to exit type \'exit\' \n').upper()
 
-        if 'UPDATE'in query:
-            print('You may only write select statements')
-        elif 'DELETE' in query:
-            print('You may only write select statements')
-        elif 'INSERT' in query:
-            print('You may only write select statements')
-        elif 'CREATE DATABASE' in query:
-            print('You may only write select statements')
-        elif 'CREATE TABLE' in query:
-            print('You may only write select statements')
-        elif 'ALTER DATABASE' in query:
-            print('You may only write select statements')
-        elif 'DROP TABLE' in query:
-            print('You may only write select statements')
-        elif 'ALTER TABLE' in query:
-            print('You may only write select statements')
-        elif 'CREATE INDEX' in query:
-            print('You may only write select statements')
-        elif 'DROP INDEX' in query:
+        if 'UPDATE' in query or 'DELETE' in query or 'INSERT' in query or 'CREATE DATABASE' in query \
+            or 'CREATE TABLE' in query or 'ALTER DATABASE' in query or 'DROP TABLE' in query  \
+                or 'ALTER TABLE' in query or 'CREATE INDEX' in query or 'DROP INDEX' in query:
             print('You may only write select statements')
         
+        elif query == 'EXIT':
+            exit()
+
         else:
             try:
                 rs = con.execute(query)
-
                 for row in rs:
                     print (row)
             except exc.OperationalError:
