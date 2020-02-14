@@ -1,7 +1,39 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+import re
 
-url = 'https://www.yelp.co.uk/biz/laynes-espresso-leeds'
+#url = 'https://www.yelp.co.uk/biz/north-bar-leeds'
+count = 0
+
+def pageScraper():
+    #Needs to grab end page number to work out how many pages to scrape
+    #Needs to grab all links on pages it's scraping
+    
+    pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start='+ str(count)
+
+    page = urlopen(pageURL)
+    soup = BeautifulSoup(page, features="html.parser")
+
+    test1 = soup.select('a[href$="-leeds"]')
+
+    for item in test1:
+        print (item.attrs['href'])
+
+    count + 10
+
+    #test2 = soup.findAll(re.compile(r'\/biz\/.{1,}?-leeds'))
+
+    #testsubject = re.compile(r'\/biz\/.{1,}?-leeds')
+
+    #mo = testsubject.search(test1)
+
+
+    #\/biz\/.{1,}?-leeds
+
+    #for item in test1:
+    #    print (item)
+
+    
 
 def scraper(url):
     page = urlopen(url)
@@ -11,26 +43,4 @@ def scraper(url):
     for item in test3:
         print(item.get_text())
 
-    #urltest = soup.findAll('biz_redir')
-    #atest = soup.a
-    #print (urltest)
-    #print (atest)
-    #test1 = soup.find('a', href='/biz_redir')
-
-    #for link in soup.findAll('a'):
-    #    print (link.string)
-
-    
-    #for link in soup.findAll('a',class_='lemon--a__373c0__IEZFH link__373c0__29943 link-color--blue-dark__373c0__1mhJo link-size--default__373c0__1skgq'):
-    #    print (link.string)
-
-    #for link in soup.findAll('a[href*=biz_redir]'):
-        print (link.string)
-
-
-
-    #print (test3.string)
-
-     #for link in soup.findAll('a'):
-    #    print (link.string)
-scraper(url)
+pageScraper()
