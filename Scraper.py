@@ -6,7 +6,8 @@ import re
 count = 0
 
 def pageScraper():
-    #Needs to grab end page number to work out how many pages to scrape
+    #Needs to grab end page number to work out how many pages to scrape then add loop to grab all links
+    #remove duplicated links
     #Needs to grab all links on pages it's scraping
     
     pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start='+ str(count)
@@ -14,12 +15,15 @@ def pageScraper():
     page = urlopen(pageURL)
     soup = BeautifulSoup(page, features="html.parser")
 
-    test1 = soup.select('a[href$="-leeds"]')
-
-    for item in test1:
+    test2 = soup.find_all('a', {'href': re.compile(r'\/biz\/.{1,}?-leeds-*\d*\d*')})
+    
+    for item in test2:
         print (item.attrs['href'])
 
     count + 10
+
+    #issue : doesn't pick up -leeds-2 links 
+    #test1 = soup.select('a[href$="-leeds"]')
 
     #test2 = soup.findAll(re.compile(r'\/biz\/.{1,}?-leeds'))
 
