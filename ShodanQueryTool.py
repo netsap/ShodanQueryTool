@@ -2,8 +2,13 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import shodan
-from time import sleep
+from time import time, sleep
 from datetime import datetime
+from os import path
+
+#Add web scraper support (OOP)
+#Add command argument support to skip right to query, force allow importing shodan services with no Shodan_ID
+#Include progress notifications
 
 engine = create_engine('sqlite:///QueryTool.db')
 meta = MetaData()
@@ -14,6 +19,11 @@ session = Session()
 api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
 
 queryFile = open('queryFile', 'r')
+
+query_file_path = 'queryFile'
+if path.getsize(query_file_path) == 0:
+    print ('No queries found in queryFile')
+
 logFile = open('log.txt', 'a')
 
 logged = False
@@ -68,6 +78,15 @@ class Vulns(Base):
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=False)
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
+
+class Yelp(Base):
+    __tablename__ = 'yelp'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    ip_str = Column(String, nullable=True)
+    url = Column(String)
+    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=True)
     
 Base.metadata.create_all(engine)
 
@@ -226,17 +245,35 @@ def checkService(result, org_id, host_id, org):
     return service_id
 
 def search(queryFile):
+    total_pages = 2
+    page_number = 1
+    first_run = True
+
     for line in queryFile:
-        results = api.search(line, limit=None)
+        print (f'Searching Shodan for \'{line}\'')
+        #Get total results, divide by 100, increment page counter by 1 until limit. 
+        # Cache page number, add exeption handeling if time out, add bool if statement to say 'if timeout then add sleep' 
+        # eta?
+        while page_number < total_pages:
+            results = api.search(line, page=page_number, limit=None)
+            sleep(5)
 
-        for result in results['matches']:
-            org = result.get("org", "n/a")
-            org_id = checkOrg(org)
+            if first_run == True:
+                total_results = results['total']
+                total_pages = int(total_results / 100)
+                first_run = False
 
-            ip_str = result["ip_str"]
-            host_id = checkHost(ip_str, result, org, org_id)
+            print ('Searching Page: ' + str(page_number) + '/' + str(total_pages))
+            page_number +=1
 
-            checkService(result, org_id, host_id, org)
+            for result in results['matches']:
+                org = result.get("org", "n/a")
+                org_id = checkOrg(org)
+
+                ip_str = result["ip_str"]
+                host_id = checkHost(ip_str, result, org, org_id)
+
+                checkService(result, org_id, host_id, org)
 
 search(queryFile)
 logCheck()

@@ -5,13 +5,13 @@ import re
 
 
 def page_scraper():
-    #Needs to grab end page number to work out how many pages to scrape then add loop to grab all links
-    #remove duplicated links
-    #Needs to grab all links on pages it's scraping
+    #Needs to grab end page number to work out how many pages to scrape then add loop to grab all links DONE (990 MAX)
+    #remove duplicated links DONE
+    #Needs to grab all links on pages it's scraping DONE
     count = 0
     unformatted_urls = []
 
-    while count < 10:
+    while count < 10: #Update to 990 once stable
         pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start='+ str(count)
         
         page = urlopen(pageURL)
