@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
+from urllib.request import urlopen, HTTPError
 from time import sleep
 import re
 import socket
@@ -11,13 +11,17 @@ def page_scraper():
     #Needs to grab all links on pages it's scraping DONE
     count = 0
     
-
-    while count < 20: #Update to 990 once stable
+    while count < 990: #Update to 990 once stable
         unformatted_urls = []
         pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start='+ str(count)
         
-        page = urlopen(pageURL)
+        try:
+            page = urlopen(pageURL)
+        except HTTPError:
+            print ('Yelp timed out, have you been banned?')
+        
         soup = BeautifulSoup(page, features="html.parser")
+
 
         #next decide whether to use a dict with the shop site_name and url or a list with the unformatted_urls
         test2 = soup.find_all('a', {'href': re.compile(r'(\/biz\/)(.{1,})(-leeds)(-*\d*\d*\d*)(\?*)')})
@@ -43,6 +47,7 @@ def format_unformatted_urls(unformatted_urls):
         urls.append(url)
         site_scraper(url)
 
+#write function to check if yelp url is already in DB and if it is skip over to stop making so many requests?
 def site_scraper(url):
     page = urlopen(url)
     sleep(5)
