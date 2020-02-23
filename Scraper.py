@@ -2,7 +2,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from time import sleep
 import re
-
+import socket
+from ShodanQueryTool import yelp_data
 
 def page_scraper():
     #Needs to grab end page number to work out how many pages to scrape then add loop to grab all links DONE (990 MAX)
@@ -17,7 +18,7 @@ def page_scraper():
         page = urlopen(pageURL)
         soup = BeautifulSoup(page, features="html.parser")
 
-        #next decide whether to use a dict with the shop name and url or a list with the unformatted_urls
+        #next decide whether to use a dict with the shop site_name and url or a list with the unformatted_urls
         test2 = soup.find_all('a', {'href': re.compile(r'(\/biz\/)(.{1,})(-leeds)(-*\d*\d*\d*)(\?*)')})
         for item in test2:
             if '?' in item.attrs['href']:
@@ -31,23 +32,34 @@ def page_scraper():
         format_unformatted_urls(unformatted_urls)
         print ('exiting...')
 
-
 def format_unformatted_urls(unformatted_urls):
     urls = []
     unformatted_urls = list (dict.fromkeys(unformatted_urls))
     for url in unformatted_urls:
         url = 'https://yelp.com%s'%url
         urls.append(url)
-
-    print (urls)
-
+        site_scraper(url)
 
 def site_scraper(url):
     page = urlopen(url)
     soup = BeautifulSoup(page, features="html.parser")
 
-    test3 = soup.select('a[href*=biz_redir]')
-    for item in test3:
-        print(item.get_text())
+    url_selector = soup.select('a[href*=biz_redir]')
+    for url in url_selector:
+        if 'Full menu' in url:
+            break
+        else:
+            url = url.get_text()
+            #https://www.regextester.com/105075
+            reg_url = re.search(r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+', url)
+            site_url = reg_url.group()
+            print (site_url)
+            site_ip = socket.gethostbyname(site_url)
+            print (site_ip)
+        site_title = soup.find('h1')
+        site_name = site_title.next
+        print (site_name + '\n')
 
+        yelp_data(site_name, site_ip, site_url)
+                
 page_scraper()

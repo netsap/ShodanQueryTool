@@ -86,7 +86,7 @@ class Yelp(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     ip_str = Column(String, nullable=True)
-    url = Column(String)
+    url = Column(String, nullable=False)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=True)
     
 Base.metadata.create_all(engine)
@@ -116,6 +116,20 @@ def queryInput():
 def logCheck():
     if logged == True:
         print ('Entries have been added to log.txt')
+
+def yelp_data(name,ip_str,url):
+    check_ip = session.query(Yelp).filter(Yelp.ip_str == ip_str).one_or_none()
+
+    if check_ip is None:
+        insert_yelp_data = Yelp(name = name, ip_str = ip_str, url = url )
+        session.add(insert_yelp_data)
+        session.commit()
+
+        yelp_id = insert_yelp_data.id
+        return yelp_id
+    else:
+        yelp_id = insert_yelp_data.id
+        return yelp_id
     
 def checkOrg(org):
     orgIDResult = session.query(Organisation).filter(Organisation.name == org).one_or_none()
@@ -247,8 +261,8 @@ def checkService(result, org_id, host_id, org):
 
 def search(queryFile):
     #Change
-    total_pages = 101
-    page_number = 99
+    total_pages = 2
+    page_number = 1
     first_run = True
 
     for query in queryFile:
@@ -266,7 +280,7 @@ def search(queryFile):
                 sleep(sleep_seconds)
             except shodan.exception.APIError as e:
                 if exception_count <= 3:
-                    print (e + ' Slowing down request rate')
+                    print (str(e) + ' Slowing down request rate')
                     sleep(2)
                     exception_count +=1
                     sleep_seconds +=1
@@ -292,10 +306,10 @@ def search(queryFile):
 
                 checkService(result, org_id, host_id, org)
 
-
-search(queryFile)
-logCheck()
-queryInput()
+if __name__ == '__main__':
+    search(queryFile)
+    logCheck()
+    queryInput()
 
 #queryTest = session.query(Organisation).get(1)
 
