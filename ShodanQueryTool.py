@@ -28,6 +28,7 @@ logFile = open('log.txt', 'a')
 
 logged = False
 
+
 class Organisation(Base):
     __tablename__ = 'organisation'
 
@@ -245,22 +246,38 @@ def checkService(result, org_id, host_id, org):
     return service_id
 
 def search(queryFile):
-    total_pages = 2
-    page_number = 1
+    #Change
+    total_pages = 101
+    page_number = 99
     first_run = True
 
-    for line in queryFile:
-        print (f'Searching Shodan for \'{line}\'')
-        #Get total results, divide by 100, increment page counter by 1 until limit. 
-        # Cache page number, add exeption handeling if time out, add bool if statement to say 'if timeout then add sleep' 
+    for query in queryFile:
+        #Get total results, divide by 100, increment page counter by 1 until limit. DONE
+        # Cache page number, add exeption handeling if time out, add try except to say 'if timeout then add more sleep' 
         # eta?
+        sleep_seconds = 2
+        exception_count = 0
+        print (f'Searching Shodan for \'{query}\'')
+
         while page_number < total_pages:
-            results = api.search(line, page=page_number, limit=None)
-            sleep(5)
+            try:
+                #CHANGE PAGE NUM
+                results = api.search(query, page=page_number, limit=None)
+                sleep(sleep_seconds)
+            except shodan.exception.APIError as e:
+                if exception_count <= 3:
+                    print (e + ' Slowing down request rate')
+                    sleep(2)
+                    exception_count +=1
+                    sleep_seconds +=1
+                else: 
+                    print ('3 Timeouts have occured, ')
+                    #sleep(120)
+                    exception_count = 0
 
             if first_run == True:
                 total_results = results['total']
-                total_pages = int(total_results / 100)
+                total_pages = int(total_results / 100 + 1)
                 first_run = False
 
             print ('Searching Page: ' + str(page_number) + '/' + str(total_pages))
@@ -274,6 +291,7 @@ def search(queryFile):
                 host_id = checkHost(ip_str, result, org, org_id)
 
                 checkService(result, org_id, host_id, org)
+
 
 search(queryFile)
 logCheck()
