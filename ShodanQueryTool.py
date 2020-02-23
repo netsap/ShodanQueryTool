@@ -128,7 +128,7 @@ def yelp_data(name,ip_str,url):
         yelp_id = insert_yelp_data.id
         return yelp_id
     else:
-        yelp_id = insert_yelp_data.id
+        yelp_id = check_ip.id
         return yelp_id
     
 def checkOrg(org):

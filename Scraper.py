@@ -10,9 +10,10 @@ def page_scraper():
     #remove duplicated links DONE
     #Needs to grab all links on pages it's scraping DONE
     count = 0
-    unformatted_urls = []
+    
 
-    while count < 10: #Update to 990 once stable
+    while count < 20: #Update to 990 once stable
+        unformatted_urls = []
         pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start='+ str(count)
         
         page = urlopen(pageURL)
@@ -27,9 +28,11 @@ def page_scraper():
                 unformatted_urls.append(item.attrs['href'])
         
         count += 10
-        sleep(5)
-    else:
+        page_number = int(count/10)
+        print ('Page number: ' + str(page_number) + '/99')
         format_unformatted_urls(unformatted_urls)
+    else:
+        
         print ('exiting...')
 
 def format_unformatted_urls(unformatted_urls):
@@ -42,6 +45,7 @@ def format_unformatted_urls(unformatted_urls):
 
 def site_scraper(url):
     page = urlopen(url)
+    sleep(5)
     soup = BeautifulSoup(page, features="html.parser")
 
     url_selector = soup.select('a[href*=biz_redir]')
@@ -58,8 +62,8 @@ def site_scraper(url):
             print (site_ip)
         site_title = soup.find('h1')
         site_name = site_title.next
-        print (site_name + '\n')
-
+        print (site_name)
+        
         yelp_data(site_name, site_ip, site_url)
                 
 page_scraper()
