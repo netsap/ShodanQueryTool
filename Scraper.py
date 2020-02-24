@@ -3,7 +3,7 @@ from urllib.request import urlopen, HTTPError
 from time import sleep
 import re
 import socket
-from ShodanQueryTool import yelp_organisation_data, yelp_host_data
+from ShodanQueryTool import yelp_organisation_data, yelp_host_data, check_yelp_url
 from pydig import query as dns_query
 
 def page_scraper():
@@ -38,7 +38,6 @@ def page_scraper():
         print ('Page number: ' + str(page_number) + '/99')
         format_unformatted_urls(unformatted_urls)
     else:
-        
         print ('exiting...')
 
 def format_unformatted_urls(unformatted_urls):
@@ -46,26 +45,31 @@ def format_unformatted_urls(unformatted_urls):
     unformatted_urls = list (dict.fromkeys(unformatted_urls))
     for yelp_url in unformatted_urls:
         yelp_url = 'https://yelp.com%s'%yelp_url
-        urls.append(yelp_url)
-        site_scraper(yelp_url)
+        yelp_organisation_id = check_yelp_url(yelp_url)
+        if yelp_organisation_id is None:
+            urls.append(yelp_url)
+            site_scraper(yelp_url)
 
 #write function to check if yelp yelp_url is already in DB and if it is skip over to stop making so many requests?
 #Issue with this is that the same site can have multiple hosts, maybe dig the domain to get all the IPs
 
 #write function that searches shodan with the IPs, link the entries back to the yelp table ID with ORM
+
 def site_scraper(yelp_url):
     page = urlopen(yelp_url)
     sleep(6)
     soup = BeautifulSoup(page, features="html.parser")
+
+    yelp_url_bak = yelp_url
 
     url_selector = soup.select('a[href*=biz_redir]')
     for yelp_url in url_selector:
         if 'Full menu' in yelp_url:
             break
         else:
-            yelp_url = yelp_url.get_text()
+            converted_yelp_url = yelp_url.get_text()
             #https://www.regextester.com/105075
-            reg_url = re.search(r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+', yelp_url)
+            reg_url = re.search(r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+', converted_yelp_url)
             site_url = reg_url.group()
             print (site_url)
             ip_str = dns_query(site_url, 'A')
@@ -74,7 +78,7 @@ def site_scraper(yelp_url):
         site_name = site_title.next
         print (site_name)
         
-        yelp_organisation_id = yelp_organisation_data(site_name, site_url)
+        yelp_organisation_id = yelp_organisation_data(site_name, site_url, yelp_url_bak)
         for ip in ip_str:
             yelp_host_data(ip, yelp_organisation_id)
                 

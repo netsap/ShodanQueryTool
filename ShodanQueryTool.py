@@ -86,6 +86,7 @@ class Yelp_Organisation(Base):
     id = Column(Integer, primary_key=True)
     site_name = Column(String, nullable=False)
     site_url = Column(String, nullable=False)
+    yelp_url = Column(String, nullable=False)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=True)
 
 class Yelp_Hosts(Base):
@@ -125,11 +126,11 @@ def logCheck():
     if logged == True:
         print ('Entries have been added to log.txt')
 
-def yelp_organisation_data(site_name, site_url):
+def yelp_organisation_data(site_name, site_url, yelp_url):
     check_site_name = session.query(Yelp_Organisation).filter(Yelp_Organisation.site_name == site_name).one_or_none()
 
     if check_site_name is None:
-        insert_yelp_organisation = Yelp_Organisation(site_name = site_name, site_url = site_url)
+        insert_yelp_organisation = Yelp_Organisation(site_name = site_name, site_url = site_url, yelp_url = yelp_url)
         session.add(insert_yelp_organisation)
         session.commit()
 
@@ -138,6 +139,16 @@ def yelp_organisation_data(site_name, site_url):
     else:
         yelp_organisation_id = check_site_name.id
         return yelp_organisation_id
+
+def check_yelp_url(yelp_url):
+    check_url = session.query(Yelp_Organisation).filter(Yelp_Organisation.yelp_url == yelp_url).one_or_none()
+
+    if check_url is None:
+        return None
+    else:
+        yelp_organisation_id = check_url.id
+        return yelp_organisation_id
+
 
 def yelp_host_data(ip_str, yelp_organisation_id):
     check_ip_str = session.query(Yelp_Hosts).filter(Yelp_Hosts.ip_str == ip_str).one_or_none()
