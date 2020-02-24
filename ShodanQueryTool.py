@@ -80,14 +80,22 @@ class Vulns(Base):
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
 
-class Yelp(Base):
-    __tablename__ = 'yelp'
+class Yelp_Organisation(Base):
+    __tablename__ = 'yelp_organisation'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    ip_str = Column(String, nullable=True)
-    url = Column(String, nullable=False)
+    site_name = Column(String, nullable=False)
+    site_url = Column(String, nullable=False)
     organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=True)
+
+class Yelp_Hosts(Base):
+    __tablename__ = 'yelp_hosts'
+
+    id = Column(Integer, primary_key=True)
+    ip_str = Column(String, nullable=False)
+    yelp_organisation_id = Column(Integer, ForeignKey("yelp_organisation.id"), nullable=False)
+    organisation_id = Column(Integer, ForeignKey("organisation.id"), nullable=True)
+    host_id = Column(Integer, ForeignKey("hosts.id"), nullable=True)
     
 Base.metadata.create_all(engine)
 
@@ -117,20 +125,35 @@ def logCheck():
     if logged == True:
         print ('Entries have been added to log.txt')
 
-def yelp_data(name,ip_str,url):
-    check_ip = session.query(Yelp).filter(Yelp.ip_str == ip_str).one_or_none()
+def yelp_organisation_data(site_name, site_url):
+    check_site_name = session.query(Yelp_Organisation).filter(Yelp_Organisation.site_name == site_name).one_or_none()
 
-    if check_ip is None:
-        insert_yelp_data = Yelp(name = name, ip_str = ip_str, url = url )
-        session.add(insert_yelp_data)
+    if check_site_name is None:
+        insert_yelp_organisation = Yelp_Organisation(site_name = site_name, site_url = site_url)
+        session.add(insert_yelp_organisation)
         session.commit()
 
-        yelp_id = insert_yelp_data.id
-        return yelp_id
+        yelp_organisation_id = insert_yelp_organisation.id
+        return yelp_organisation_id
     else:
-        yelp_id = check_ip.id
-        return yelp_id
+        yelp_organisation_id = check_site_name.id
+        return yelp_organisation_id
+
+def yelp_host_data(ip_str, yelp_organisation_id):
+    check_ip_str = session.query(Yelp_Hosts).filter(Yelp_Hosts.ip_str == ip_str).one_or_none()
     
+    if check_ip_str is None:
+        insert_yelp_hosts = Yelp_Hosts(ip_str = ip_str, yelp_organisation_id = yelp_organisation_id)
+        session.add(insert_yelp_hosts)
+        session.commit()
+
+        yelp_host_id = insert_yelp_hosts.id
+        return yelp_host_id
+    else:
+        yelp_host_id = check_ip_str.id
+        return yelp_host_id
+
+
 def checkOrg(org):
     orgIDResult = session.query(Organisation).filter(Organisation.name == org).one_or_none()
     
