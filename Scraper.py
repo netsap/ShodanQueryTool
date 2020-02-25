@@ -50,8 +50,7 @@ def format_unformatted_urls(unformatted_urls):
             urls.append(yelp_url)
             site_scraper(yelp_url)
 
-#write function to check if yelp yelp_url is already in DB and if it is skip over to stop making so many requests?
-#Issue with this is that the same site can have multiple hosts, maybe dig the domain to get all the IPs
+#dig the domain to get all the IPs
 
 #write function that searches shodan with the IPs, link the entries back to the yelp table ID with ORM
 
