@@ -165,29 +165,38 @@ def yelp_host_data(ip_str, yelp_organisation_id):
         session.commit()
 
         yelp_host_id = insert_yelp_hosts.id
-        yelp_to_shodan(ip_str, yelp_organisation_id, yelp_host_id)
     else:
         yelp_host_id = check_ip_str.id
         return yelp_host_id
 
 
-def yelp_to_shodan(ip_str, yelp_organisation_id, yelp_host_id):
+def yelp_to_shodan():
     from shodan_search import search
-    search(ip_str)
 
-    match_yelp_data = session.query(Hosts).filter(
-        Hosts.ip_str == ip_str).one_or_none()
-    if match_yelp_data:
-        host_id = match_yelp_data.id
-        org_id = match_yelp_data.organisation_id
+    yelp_gather = session.query(YelpHosts)
+    
+    for row in yelp_gather:
+        ip_str = row.ip_str
+        yelp_organisation_id = row.yelp_organisation_id
+        yelp_host_id = row.id
+        
+        search(ip_str)
+    
+        match_yelp_data = session.query(Hosts).filter(
+            Hosts.ip_str == ip_str).one_or_none()
 
-        session.query(YelpOrganisation).filter(
-            YelpOrganisation.id == yelp_organisation_id).update({'organisation_id': org_id})
-        session.query(YelpHosts).filter(YelpHosts.id == yelp_host_id).update(
-            {'organisation_id': org_id, 'host_id': host_id})
-        session.commit()
-    else:
-        pass
+        if match_yelp_data:
+            host_id = match_yelp_data.id
+            org_id = match_yelp_data.organisation_id
+
+            session.query(YelpOrganisation).filter(
+                YelpOrganisation.id == yelp_organisation_id).update({'organisation_id': org_id})
+
+            session.query(YelpHosts).filter(YelpHosts.id == yelp_host_id).update(
+                {'organisation_id': org_id, 'host_id': host_id})
+            session.commit()
+        else:
+            pass
 
 
 def check_org(org):

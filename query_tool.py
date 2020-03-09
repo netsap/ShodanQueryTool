@@ -1,5 +1,5 @@
 from sys import argv
-from database import query_input, import_yelp_data
+from database import query_input, import_yelp_data, yelp_to_shodan
 from scraper import page_scraper
 from shodan_search import search, file_parser
 
@@ -27,20 +27,23 @@ else:
 if argument == '-q' or argument == '--query':
     query_input()
 
-if '-f' in argument or '--file' in argument:
+elif '-f' in argument or '--file' in argument:
     file_path = argv[2]
     file_parser(file_path)
 
-if argument == '-s' or argument == '--shodan':
+elif argument == '-y' or argument == '--yelp':
+    page_scraper()
+
+elif argument == '-i' or argument == '--import':
+    yelp_to_shodan()
+
+elif argument == '-s' or argument == '--shodan':
     try:
         query = argv[2]
         search(query)
     except IndexError:
         print('\nError: Please provide a Shodan search query\n')
         exit()
-
-elif argument == '-y' or argument == '--yelp':
-    page_scraper()
 
 elif argument == '-h' or argument == '--help':
     help()
