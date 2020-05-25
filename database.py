@@ -174,14 +174,14 @@ def yelp_to_shodan():
     from shodan_search import search
 
     yelp_gather = session.query(YelpHosts)
-    
+
     for row in yelp_gather:
         ip_str = row.ip_str
         yelp_organisation_id = row.yelp_organisation_id
         yelp_host_id = row.id
-        
+
         search(ip_str)
-    
+
         match_yelp_data = session.query(Hosts).filter(
             Hosts.ip_str == ip_str).one_or_none()
 
