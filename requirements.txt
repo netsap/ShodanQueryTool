@@ -2,3 +2,4 @@ beautifulsoup4
 sqlalchemy
 shodan
 pydig
+pandas==1.0.1

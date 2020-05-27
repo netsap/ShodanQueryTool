@@ -5,3 +5,5 @@ queryFile
 .vscode
 __pycache__
 prototypes
+*.csv
+queries

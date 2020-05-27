@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+import pandas as pd
 
 engine = create_engine('sqlite:///QueryTool.db')
 meta = MetaData()
@@ -104,7 +105,6 @@ Base.metadata.create_all(engine)
 
 def query_input():
     con = engine.connect()
-
     while True:
         query = input(
             '\nType your Query Below to exit type \'exit\' \n').upper()
@@ -119,9 +119,13 @@ def query_input():
 
         else:
             try:
-                rs = con.execute(query)
-                for row in rs:
-                    print(row)
+                out = pd.read_sql(query, con=engine)
+                file_name =  'queries/' + str(datetime.now().strftime("%d-%m_%H-%M-%S--%f")) +  '.csv'
+                csv_out = out.to_csv(file_name,index=False)
+                #with open('ass1.csv', 'w') as file:
+                #    file.write(str(query) + '\n')
+                #    file.write(out.to_string())
+                #print ('Results in: ' + file.name)
             except exc.OperationalError:
                 print('\nInvalid Query')
 
@@ -135,7 +139,6 @@ def yelp_organisation_data(site_name, site_url, yelp_url):
             site_name=site_name, site_url=site_url, yelp_url=yelp_url)
         session.add(insert_yelp_organisation)
         session.commit()
-
         yelp_organisation_id = insert_yelp_organisation.id
         return yelp_organisation_id
     else:
@@ -210,7 +213,6 @@ def check_org(org):
         session.commit()
 
         org_id = insOrg.id
-
         return org_id
     else:
         org_id = orgIDResult.id
