@@ -122,10 +122,6 @@ def query_input():
                 out = pd.read_sql(query, con=engine)
                 file_name =  'queries/' + str(datetime.now().strftime("%d-%m_%H-%M-%S--%f")) +  '.csv'
                 csv_out = out.to_csv(file_name,index=False)
-                #with open('ass1.csv', 'w') as file:
-                #    file.write(str(query) + '\n')
-                #    file.write(out.to_string())
-                #print ('Results in: ' + file.name)
             except exc.OperationalError:
                 print('\nInvalid Query')
 

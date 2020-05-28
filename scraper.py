@@ -4,6 +4,7 @@ from time import sleep
 from re import compile, search
 from database import yelp_organisation_data, yelp_host_data, check_yelp_url
 from socket import getaddrinfo as dns_query
+from socket import gaierror
 
 def page_scraper(): 
     #Needs to grab end page number to work out how many pages to scrape then add loop to grab all links DONE (990 MAX)
@@ -66,12 +67,14 @@ def site_scraper(yelp_url):
             reg_url = search(r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+', converted_yelp_url)
             site_url = reg_url.group()
             print (site_url)
-            ip_str = dns_query(site_url, 80)
-            ip_list = []
-            for ip in ip_str:
-                ip_list.append(ip[4][0])
-                print (ip[4][0])
-
+            try:
+                ip_str = dns_query(site_url, 80)
+                ip_list = []
+                for ip in ip_str:
+                    ip_list.append(ip[4][0])
+                    print (ip[4][0])
+            except gaierror:
+                continue
         yelp_organisation_id = yelp_organisation_data(site_name, site_url, yelp_url_bak)
         for ip in ip_list:
             yelp_host_data(ip, yelp_organisation_id)

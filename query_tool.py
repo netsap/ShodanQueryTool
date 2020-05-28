@@ -14,6 +14,7 @@ def help():
     -f [FILE] or --file [FILE]: Query shodan.io API by specifying the path to a text file of queries
     -s or --shodan [QUERY]: Query shodan.io API with a single query, save the data in the database
     -y or --yelp: run the yelp web scraper
+    -i or --import: search shodan.io API for yelp hosts gathered the web scrape, results will be imported to shodan tables
     -h or --help: Display this message
     ''')
 
