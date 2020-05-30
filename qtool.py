@@ -1,14 +1,13 @@
 from sys import argv
 from database import query_input, import_yelp_data, yelp_to_shodan
-from scraper import page_scraper
+from scraper import yelp_result_scraper
 from shodan_search import search, file_parser
 
 
 def help():
     print(
         '''
-    Usage: ./query_tool OPTIONS [QUERY]
-    
+    Usage: ./qtool OPTIONS [QUERY]\n
     Options:
     -q or --query: Query the database
     -f [FILE] or --file [FILE]: Query shodan.io API by specifying the path to a text file of queries
@@ -33,7 +32,7 @@ elif '-f' in argument or '--file' in argument:
     file_parser(file_path)
 
 elif argument == '-y' or argument == '--yelp':
-    page_scraper()
+    yelp_result_scraper()
 
 elif argument == '-i' or argument == '--import':
     yelp_to_shodan()
