@@ -9,20 +9,21 @@ from socket import gaierror
 
 # Makes request to Yelp, creates soup, passes soup to next function
 def yelp_result_scraper():
-    count = 570
-    while count < 1000:  # 990 is the last page
+    count = 980
+    while count < 990:  # 990 is the last page
         unformatted_urls = []
-        pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc=Leeds%2C%20West%20Yorkshire&start=' + \
-            str(count)
+        pageURL = f'https://www.yelp.co.uk/search?find_desc=&find_loc='\
+            'Leeds%2C%20West%20Yorkshire&start={count}'
         sleep(3)
         try:
             page = urlopen(pageURL)
+            soup = BeautifulSoup(page, features="html.parser")
+            count += 10
+            page_number = int(count/10)
+            find_internal_yelp_links(soup, page_number, unformatted_urls)
         except HTTPError:
             print('Yelp timed out, have you been banned?')
-        soup = BeautifulSoup(page, features="html.parser")
-        count += 10
-        page_number = int(count/10)
-        find_internal_yelp_links(soup, page_number, unformatted_urls)
+            sleep(5)
     else:
         print('Completed yelp scrape, exiting...')
 
@@ -76,7 +77,9 @@ def find_external_links(soup, yelp_url_bak, url_selector, yelp_url):
             print(site_name)
             # https://www.regextester.com/105075
             reg_url = search(
-                r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+', converted_yelp_url)
+                r'''
+                ^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+
+                ''', converted_yelp_url)
             site_url = reg_url.group()
             print(site_url)
             ip_list = reverse_dns_query(site_url)
