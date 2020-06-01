@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen, HTTPError
 from time import sleep
 from re import compile, search
-from database import yelp_organisation_data, yelp_host_data, check_yelp_url
+from database import yelp_check_org, yelp_check_url, yelp_check_host
 from socket import getaddrinfo as dns_query
 from socket import gaierror
 
@@ -107,7 +107,7 @@ def load_data(site_name, site_url, yelp_url_bak, ip_list):
     yelp_organisation_id = yelp_organisation_data(
         site_name, site_url, yelp_url_bak)
     for ip in ip_list:
-        yelp_host_data(ip, yelp_organisation_id)
+        yelp_check_host(ip, yelp_organisation_id)
 
 
 if __name__ == '__main__':

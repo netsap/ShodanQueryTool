@@ -1,5 +1,5 @@
 from sys import argv
-from database import query_input, import_yelp_data, yelp_to_shodan
+from database import query_input, yelp_to_shodan
 from scraper import yelp_result_scraper
 from shodan_search import search, file_parser
 
@@ -7,13 +7,16 @@ from shodan_search import search, file_parser
 def help():
     print(
         '''
-    Usage: ./qtool OPTIONS [QUERY]\n
+    Usage: ./qtool OPTIONS [QUERY]
     Options:
     -q or --query: Query the database
-    -f [FILE] or --file [FILE]: Query shodan.io API by specifying the path to a text file of queries
-    -s or --shodan [QUERY]: Query shodan.io API with a single query, save the data in the database
+    -f [FILE] or --file [FILE]: Query shodan.io API by specifying the path to\
+         a text file of queries
+    -s or --shodan [QUERY]: Query shodan.io API with a single query, \
+        save the data in the database
     -y or --yelp: run the yelp web scraper
-    -i or --import: search shodan.io API for yelp hosts gathered the web scrape, results will be imported to shodan tables
+    -i or --import: search shodan.io API for gathered yelp hosts, \
+        results will be imported to shodan tables
     -h or --help: Display this message
     ''')
 
