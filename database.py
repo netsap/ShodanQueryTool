@@ -19,6 +19,7 @@ def write_log_file(log_string):
         logFile.write(log_string)
 
 
+# Creates the Organisation class
 class Organisation(Base):
     __tablename__ = 'organisation'
 
@@ -30,6 +31,7 @@ class Organisation(Base):
     vulns = relationship('Vulns', cascade='all, delete, delete-orphan')
 
 
+# Creates the Hosts class
 class Hosts(Base):
     __tablename__ = 'hosts'
 
@@ -42,6 +44,7 @@ class Hosts(Base):
         "organisation.id"), nullable=False)
 
 
+# Creates the Services class
 class Services(Base):
     __tablename__ = 'services'
 
@@ -62,6 +65,7 @@ class Services(Base):
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=False)
 
 
+# Creates the Vulns class
 class Vulns(Base):
     __tablename__ = 'vulns'
 
@@ -77,6 +81,7 @@ class Vulns(Base):
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
 
 
+# Creates the Yelp_organisation class
 class YelpOrganisation(Base):
     __tablename__ = 'yelp_organisation'
 
@@ -88,6 +93,7 @@ class YelpOrganisation(Base):
         "organisation.id"), nullable=True)
 
 
+# Creates the Yelp_hosts class
 class YelpHosts(Base):
     __tablename__ = 'yelp_hosts'
 
@@ -100,12 +106,16 @@ class YelpHosts(Base):
     host_id = Column(Integer, ForeignKey("hosts.id"), nullable=True)
 
 
+# Creates tables from classes
 Base.metadata.create_all(engine)
+
+# Blacklisted words for the 'query' function
 input_blacklist = ['UPDATE', 'DELETE', 'INSERT', 'CREATE DATABASE',
                    'CREATE TABLE', 'ALTER DATABASE', 'DROP TABLE',
                    'ALTER TABLE', 'CREATE INDEX', 'DROP INDEX']
 
 
+# Recives query input, and runs code as required
 def query_input():
     con = engine.connect()
     while True:
@@ -119,6 +129,7 @@ def query_input():
             output_data(engine, query)
 
 
+# Outputs SQL queries from query_input to a .csv file, handles invalid queries
 def output_data(engine, query):
     try:
         out = pd.read_sql(query, con=engine)
@@ -130,6 +141,7 @@ def output_data(engine, query):
         print('\nInvalid Query')
 
 
+# Checks if specified Yelp Organisation exists in yelp_organisation table
 def yelp_check_org(site_name, site_url, yelp_url):
     check_site_name = session.query(YelpOrganisation).filter(
         YelpOrganisation.site_name == site_name).one_or_none()
@@ -141,6 +153,7 @@ def yelp_check_org(site_name, site_url, yelp_url):
     return yelp_organisation_id
 
 
+# Inserts new Yelp Organisation into database, returns organisation ID if so
 def yelp_insert_new_org(site_name, site_url, yelp_url):
     insert_yelp_organisation = YelpOrganisation(
         site_name=site_name, site_url=site_url, yelp_url=yelp_url)
@@ -150,6 +163,8 @@ def yelp_insert_new_org(site_name, site_url, yelp_url):
     return yelp_organisation_id
 
 
+# Checks if the Yelp Listing URL already exists in database,
+# returns ID of entry if so
 def yelp_check_url(yelp_url):
     check_url = session.query(YelpOrganisation).filter(
         YelpOrganisation.yelp_url == yelp_url).one_or_none()
@@ -160,6 +175,8 @@ def yelp_check_url(yelp_url):
         return yelp_organisation_id
 
 
+# Returns ID of yelp host if IP already exists in database,
+# otherwise passes variables to insert new host
 def yelp_check_host(ip_str, yelp_organisation_id):
     check_ip_str = session.query(YelpHosts).filter(
         YelpHosts.ip_str == ip_str).one_or_none()
@@ -170,6 +187,7 @@ def yelp_check_host(ip_str, yelp_organisation_id):
     return yelp_host_id
 
 
+# Inserts new Yelp Host into the yelp_hosts table, returns ID
 def yelp_insert_new_host(ip_str, yelp_organisation_id):
     insert_yelp_hosts = YelpHosts(
         ip_str=ip_str, yelp_organisation_id=yelp_organisation_id)
@@ -179,6 +197,9 @@ def yelp_insert_new_host(ip_str, yelp_organisation_id):
     return yelp_host_id
 
 
+# First step in searching shodan for yelp hosts,
+# assignes ip_str, org_id and id of each entry to variables,
+# passes variables to function below
 def yelp_to_shodan():
     from shodan_search import search
     yelp_gather = session.query(YelpHosts)
@@ -190,6 +211,8 @@ def yelp_to_shodan():
         link_yelp_ids(ip_str, yelp_organisation_id, yelp_host_id)
 
 
+# Queries hosts table for ip_str which matches any yelp host ip_str
+# If a match is found, org_id and host_id are assigned in the yelp_hosts table
 def link_yelp_ids():
     find_matching_host = session.query(Hosts).filter(
         Hosts.ip_str == ip_str).one_or_none()
@@ -204,6 +227,7 @@ def link_yelp_ids():
         session.commit()
 
 
+# Checks if organisation name already exists in organisation table
 def check_org(org):
     search_org = session.query(Organisation).filter(
         Organisation.name == org).one_or_none()
@@ -214,6 +238,7 @@ def check_org(org):
     return org_id
 
 
+# Inserts new organisation into organisation table
 def insert_new_org(org):
     insOrg = Organisation(name=org)
     session.add(insOrg)
@@ -222,6 +247,8 @@ def insert_new_org(org):
     return org_id
 
 
+# Checks if ip_str already exists in hosts table,
+# if so returns ID, otherwise passes variables to next function
 def check_host(ip_str, asn, city, country_code, org_id):
     hostIDResult = session.query(Hosts).filter(
         Hosts.ip_str == ip_str).one_or_none()
@@ -232,6 +259,7 @@ def check_host(ip_str, asn, city, country_code, org_id):
     return host_id
 
 
+# Inserts new hosts into hosts table, returns ID
 def insert_new_host(ip_str, asn, country_code, city, org_id):
     insHosts = Hosts(
         ip_str=ip_str, asn=asn, country_code=country_code,
@@ -242,6 +270,12 @@ def insert_new_host(ip_str, asn, country_code, city, org_id):
     return host_id
 
 
+# Checks if service already exists by matching shodan_id,
+# If so, a timestamp from the original entry is compared to the current service
+# If the timestamp is more recent, the variables are passed to the
+# update_existing_service function.
+# If the timestamp is the same, the service_id is returned.
+# If the service doesn't exist, it is passed to the next function.
 def check_service(
         shodan_module, port, transport, product, hostname,
         domain, data, timestamp, shodan_id, vendor_id,
@@ -262,6 +296,7 @@ def check_service(
     return service_id
 
 
+# Inserts new service into database and returns service_id
 def insert_new_service(
         port, transport, product, shodan_module, hostname, domain, data,
         timestamp, shodan_id, vendor_id, org_id, host_id, org):
@@ -278,6 +313,8 @@ def insert_new_service(
     return service_id
 
 
+# Updates existing service entry with new information, adds modified timestamp
+# and logs update in logfile.
 def update_existing_service(
         port, transport, product, shodan_module, hostname, domain,
         data, timestamp, shodan_id, vendor_id, service_id):
@@ -294,6 +331,9 @@ def update_existing_service(
     return service_id
 
 
+# Checks if vuln already exists in database by attempting to match current cve
+# and service_id to entries in vulns table.
+# If none, variables are passed to next function.
 def check_vulns(
     cve, cvss, summary, reference, verified,
         org_id, host_id, service_id):
@@ -303,10 +343,9 @@ def check_vulns(
         insert_new_vulns(
             cve, cvss, summary, reference, verified,
             org_id, host_id, service_id)
-    else:
-        pass
 
 
+# Inserts new vulns into database
 def insert_new_vulns(
     cve, cvss, summary, reference, verified,
         org_id, host_id, service_id):
@@ -318,6 +357,7 @@ def insert_new_vulns(
     session.commit()
 
 
+# Logs entries without a shodan_id to logfile, notifying that they won't
 def log_no_shodan_id(
   port, transport, product, org, org_id, host_id,
   vendor_id, shodan_module, vulns):
@@ -337,16 +377,6 @@ def log_no_shodan_id(
     Vulns: {vulns}''')
     write_log_file(log_string)
     service_id = None
-    return service_id
-
-
-def log_no_vulns(service_id):
-    log_string = (
-        f'''
-        No Vulns for for Service ID:{service_id}
-        Timestamp: {datetime.now()}
-        ''')
-    write_log_file(log_string)
 
 
 def import_yelp_data():
@@ -364,6 +394,7 @@ def import_yelp_data():
             print('else')
 
 
+# Queries all ip_str's in hosts table, returns results
 def host_search_query():
     shodan_hosts = session.query(Hosts).all()
     return shodan_hosts
