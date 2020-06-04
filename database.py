@@ -242,8 +242,9 @@ def insert_new_host(ip_str, asn, country_code, city, org_id):
 
 
 def check_service(
-  port, transport, product, shodan_module, hostname, domain, data,
-  timestamp, shodan_id, vendor_id, org_id, host_id, org):
+        shodan_module, port, transport, product, hostname,
+        domain, data, timestamp, shodan_id, vendor_id,
+        org, org_id, host_id):
     shodanIDCheck = session.query(Services).filter(
         Services.shodan_id == shodan_id).one_or_none()
     if shodanIDCheck is None:
@@ -251,9 +252,10 @@ def check_service(
             port, transport, product, shodan_module, hostname, domain, data,
             timestamp, shodan_id, vendor_id, org_id, host_id, org)
     elif timestamp > shodanIDCheck.created:
-        service_id = update_existing_service(
-            port, transport, product, shodan_module, hostname, domain, data,
-            timestamp, shodan_id, vendor_id)
+        service_id = shodanIDCheck.id
+        update_existing_service(
+            port, transport, product, shodan_module, hostname, domain,
+            data, timestamp, shodan_id, vendor_id, service_id)
     else:
         service_id = shodanIDCheck.id
     return service_id
@@ -277,15 +279,13 @@ def insert_new_service(
 
 def update_existing_service(
         port, transport, product, shodan_module, hostname, domain,
-        data, timestamp, shodan_id, vendor_id):
-    updService = Services(
-            port=port, transport=transport, product=product,
-            shodan_module=shodan_module, hostname=hostname, domain=domain,
-            data=data, modified=timestamp, shodan_id=shodan_id,
-            vendor_id=vendor_id)
-    session.query(Services).update(updService)
-    service_id = updService.id
-
+        data, timestamp, shodan_id, vendor_id, service_id):
+    session.query(Services).filter(
+        Services.id == service_id).update(
+        {'port': port, 'transport': transport, 'product': product,
+            'shodan_module': shodan_module, 'hostname': hostname,
+            'domain': domain, 'data': data, 'modified': timestamp,
+            'shodan_id': shodan_id, 'vendor_id': vendor_id})
     log_string = (f'''
     Service ID: {service_id} has been updated'
     Timestamp: {datetime.now()}''')
@@ -293,7 +293,22 @@ def update_existing_service(
     return service_id
 
 
-def insert_new_vulns(cve, cvss, summary, reference, verified):
+def check_vulns(
+    cve, cvss, summary, reference, verified,
+        org_id, host_id, service_id):
+    vuln_check = session.query(Vulns).filter(Vulns.cve == cve).filter(
+        Vulns.service_id == service_id).one_or_none()
+    if vuln_check is None:
+        insert_new_vulns(
+            cve, cvss, summary, reference, verified,
+            org_id, host_id, service_id)
+    else:
+        print('vulns_dupe')
+
+
+def insert_new_vulns(
+    cve, cvss, summary, reference, verified,
+        org_id, host_id, service_id):
     insVuls = Vulns(
       cve=cve, cvss=cvss, summary=summary, reference=reference,
       verified=verified, organisation_id=org_id, host_id=host_id,
@@ -348,4 +363,6 @@ def import_yelp_data():
             print('else')
 
 
-import_yelp_data()
+def host_search_query():
+    shodan_hosts = session.query(Hosts).all()
+    return shodan_hosts
