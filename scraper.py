@@ -9,11 +9,11 @@ from socket import gaierror
 
 # Makes request to Yelp, creates soup, passes soup to next function
 def yelp_result_scraper():
-    count = 980
+    count = 0
     while count < 990:  # 990 is the last page
         unformatted_urls = []
-        pageURL = f'https://www.yelp.co.uk/search?find_desc=&find_loc='\
-            'Leeds%2C%20West%20Yorkshire&start={count}'
+        pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc='\
+            'Leeds%2C%20West%20Yorkshire&start=' + str(count)
         sleep(3)
         try:
             page = urlopen(pageURL)
@@ -46,7 +46,7 @@ def format_unformatted_urls(unformatted_urls):
     unformatted_urls = list(dict.fromkeys(unformatted_urls))
     for yelp_url in unformatted_urls:
         yelp_url = 'https://yelp.com%s' % yelp_url
-        yelp_organisation_id = check_yelp_url(yelp_url)
+        yelp_organisation_id = yelp_check_url(yelp_url)
         if yelp_organisation_id is None:
             yelp_individual_listing_scraper(yelp_url)
 
@@ -77,9 +77,8 @@ def find_external_links(soup, yelp_url_bak, url_selector, yelp_url):
             print(site_name)
             # https://www.regextester.com/105075
             reg_url = search(
-                r'''
-                ^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)*[a-zA-Z0-9][a-zA-Z0-9-_]+
-                ''', converted_yelp_url)
+                r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)'
+                r'*[a-zA-Z0-9][a-zA-Z0-9-_]+', converted_yelp_url)
             site_url = reg_url.group()
             print(site_url)
             ip_list = reverse_dns_query(site_url)
@@ -104,7 +103,7 @@ def reverse_dns_query(site_url):
 
 # Passes all data to database.py functions which load the data into the DB
 def load_data(site_name, site_url, yelp_url_bak, ip_list):
-    yelp_organisation_id = yelp_organisation_data(
+    yelp_organisation_id = yelp_check_org(
         site_name, site_url, yelp_url_bak)
     for ip in ip_list:
         yelp_check_host(ip, yelp_organisation_id)

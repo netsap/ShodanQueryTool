@@ -134,7 +134,8 @@ def yelp_check_org(site_name, site_url, yelp_url):
     check_site_name = session.query(YelpOrganisation).filter(
         YelpOrganisation.site_name == site_name).one_or_none()
     if check_site_name is None:
-        yelp_insert_new_org(site_name, site_url, yelp_url)
+        yelp_organisation_id = yelp_insert_new_org(
+            site_name, site_url, yelp_url)
     else:
         yelp_organisation_id = check_site_name.id
     return yelp_organisation_id
@@ -163,13 +164,13 @@ def yelp_check_host(ip_str, yelp_organisation_id):
     check_ip_str = session.query(YelpHosts).filter(
         YelpHosts.ip_str == ip_str).one_or_none()
     if check_ip_str is None:
-        yelp_insert_new_host(ip_str, yelp_organisation_id)
+        yelp_host_id = yelp_insert_new_host(ip_str, yelp_organisation_id)
     else:
         yelp_host_id = check_ip_str.id
     return yelp_host_id
 
 
-def yelp_insert_new_host():
+def yelp_insert_new_host(ip_str, yelp_organisation_id):
     insert_yelp_hosts = YelpHosts(
         ip_str=ip_str, yelp_organisation_id=yelp_organisation_id)
     session.add(insert_yelp_hosts)
@@ -303,7 +304,7 @@ def check_vulns(
             cve, cvss, summary, reference, verified,
             org_id, host_id, service_id)
     else:
-        print('vulns_dupe')
+        pass
 
 
 def insert_new_vulns(
