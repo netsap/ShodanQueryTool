@@ -364,6 +364,7 @@ def log_no_shodan_id(
     global logged
     logged = True
     log_string = (f'''
+
     Shodan.ID Field is empty, the following data will not be inserted:
     Timestamp:{datetime.now()}
     Port: {port}
@@ -374,7 +375,9 @@ def log_no_shodan_id(
     Host_ID: {host_id}
     Vendor ID: {vendor_id}
     Shodan Module: {shodan_module}
-    Vulns: {vulns}''')
+    Vulns: {vulns}
+
+    ''')
     write_log_file(log_string)
     service_id = None
 

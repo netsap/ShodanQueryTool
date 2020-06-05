@@ -30,10 +30,10 @@ def file_parser(file_path='ShodanQueries'):
 # passes each result of the query to sort_results
 def search(query):
     first_run = True
-    page_number = 620
-    total_pages = 622
+    page_number = 1040
+    total_pages = 1042
     print(f'Searching Shodan for {query}')
-    while page_number < total_pages:
+    while page_number <= total_pages:
         try:
             results = api.search(
                 query, page=page_number, limit=None, minify=False)
@@ -53,8 +53,11 @@ def search(query):
         except KeyError as e:
             print(f'No response, pausing requests for 1 second')
             sleep(1)
-    if write_log_file.called is True:
-        print('Entries added to log.txt')
+    try:
+        if write_log_file.called is True:
+            print('Entries added to log.txt')
+    except AttributeError:
+        pass
 
 
 # Uses api.host to search for indivdual IPs listed in hosts table,
