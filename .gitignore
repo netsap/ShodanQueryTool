@@ -9,3 +9,4 @@ prototypes
 queries
 *.json
 *.gz
+hosts.txt
