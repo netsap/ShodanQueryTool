@@ -1,10 +1,11 @@
-from database import check_org, check_host, check_service,\
-    query_input, check_vulns, write_log_file,\
-    log_no_shodan_id, host_search_query
 import shodan
 from time import time, sleep
 from datetime import datetime
 from os import path
+from database import check_org, check_host, check_service,\
+    query_input, check_vulns, write_log_file,\
+    log_no_shodan_id, host_search_query, insert_new_host,\
+    insert_new_service, update_existing_service, insert_new_vulns
 
 # Initialises Shodan with API key
 api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
@@ -13,13 +14,19 @@ api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
 # Opens file path passed via qtool or uses "ShodanQueries" as default
 # Checks if file has entries, if not prints an error
 # Passes each query to the next function
-def file_parser(file_path='ShodanQueries'):
+def query_file_parser(file_path='ShodanQueries.txt'):
     with open(file_path, 'r') as file:
         if path.getsize(file_path) == 0:
             print('No queries found in ' + file_path)
             exit()
         for query in file:
             search(query)
+
+
+def host_file_parser(host_file_path='hosts.txt'):
+    with open(host_file_path, 'r') as file:
+        for ip_str in file:
+            search_hosts(ip_str.rstrip("\n"))
 
 
 # Searches Shodan API for given query,
@@ -60,22 +67,20 @@ def search(query):
         pass
 
 
-# Uses api.host to search for indivdual IPs listed in hosts table,
-# assigns variables to each row in hosts table,
+# Uses api.host to search for indivdual IPs listed in hosts text file,
 # handles timeout errors,
 # passes results to next function
-def search_hosts():
-    hosts = host_search_query()
-    for row in hosts:
-        ip_str = row.ip_str
-        org_id = row.organisation_id
-        host_id = row.id
+# IF IP EXISTS IN DB DON'T PERFORM SEARCH
+def search_hosts(ip_str):
+    host_id = check_host(ip_str)
+    if host_id is None:
         try:
             host_search_result = api.host(ip_str, minify=False)
+            print(ip_str)
             sort_results(host_search_result, host_search=True)
         except shodan.exception.APIError:
-            sleep(1)
             print("Timeout")
+            sleep(1)
 
 
 # gathers organisation, checks to see if it exists in the organisation table,
@@ -103,6 +108,8 @@ def parse_search_results(result, org, org_id, ip_str, asn):
     country_code = resultLocation.get("country_code", "n/a")
     timestamp = result["timestamp"]
     host_id = check_host(ip_str, asn, city, country_code, org_id)
+    if host_id is None:
+        host_id = insert_new_host(ip_str, asn, country_code, city, org_id)
     shodan_module, port, transport, product, vendor_id, data,\
         shodan_id, vulns, domain, hostname = data_extraction(result)
     pass_data_to_database(
@@ -120,7 +127,7 @@ def parse_host_results(result, org, org_id, ip_str, asn):
     city = result['city']
     country_code = result['country_code']
     timestamp = result['last_update']
-    host_id = check_host(ip_str, asn, city, country_code, org_id)
+    host_id = insert_new_host(ip_str, asn, country_code, city, org_id)
     for row in result['data']:
         shodan_module, port, transport, product, vendor_id, data,\
             shodan_id, vulns, domain, hostname = data_extraction(row)
@@ -164,11 +171,11 @@ def data_extraction(result):
 
 
 # If shodan_id is none, log the service and continue,
-# else check_service to see if exists, if not it will be inserted.
-# checks if "vulns" dict exists in results, if so passes to next function.
-# If vuln variables are returned, they are passed to check_vulns,
+# else check_service to see if exists,
+# which checks if the service already exists, if not it will be inserted.
+# checks if "vulns" dict exists in results, if so passes to check_vulns.
 # which checks if the vuln already exists for the service_id,
-# if not it is inserted.
+# if not vulns are inserted.
 def pass_data_to_database(
         shodan_module, port, transport, product, hostname, domain,
         data, timestamp, shodan_id, vulns, vendor_id, org, org_id, host_id):
@@ -176,18 +183,27 @@ def pass_data_to_database(
         log_no_shodan_id(
             port, transport, product, org, org_id, host_id,
             vendor_id, shodan_module, vulns)
-        pass
     else:
-        service_id = check_service(
-            shodan_module, port, transport, product, hostname,
-            domain, data, timestamp, shodan_id, vendor_id,
-            org, org_id, host_id)
-        if vulns:
-            for vuln in vulns:
-                cve, cvss, summary, reference, verified = parse_vulns(vulns)
-                check_vulns(
-                    cve, cvss, summary, reference, verified,
-                    org_id, host_id, service_id)
+        service_id = check_service(shodan_id)
+        if service_id is None:
+            service_id = insert_new_service(
+                port, transport, product, shodan_module, hostname, domain,
+                data, timestamp, shodan_id, vendor_id, org_id, host_id, org)
+            if vulns:
+                for vuln in vulns:
+                    cve, cvss, summary, reference, verified = parse_vulns(
+                        vulns)
+                    vuln_check = check_vulns(cve, service_id)
+                    if vuln_check is None:
+                        insert_new_vulns(
+                            cve, cvss, summary, reference, verified,
+                            org_id, host_id, service_id)
+        else:
+            updated = check_service_timestamp(timestamp, service_id)
+            if updated is True:
+                update_existing_service(
+                    port, transport, product, shodan_module, hostname, domain,
+                    data, timestamp, shodan_id, vendor_id, service_id)
 
 
 # Assigns and returns variables from "vulns" dict
@@ -207,4 +223,4 @@ def parse_vulns(vulns):
 
 # If this file is called individually, run this function
 if __name__ == '__main__':
-    file_parser()
+    host_file_parser()

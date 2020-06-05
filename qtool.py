@@ -1,7 +1,7 @@
 from sys import argv
 from database import query_input, yelp_to_shodan
 from scraper import yelp_result_scraper
-from shodan_search import search, file_parser
+from shodan_search import search, query_file_parser
 
 
 def help():
@@ -32,7 +32,7 @@ if argument == '-q' or argument == '--query':
 
 elif '-f' in argument or '--file' in argument:
     file_path = argv[2]
-    file_parser(file_path)
+    query_file_parser(file_path)
 
 elif argument == '-y' or argument == '--yelp':
     yelp_result_scraper()

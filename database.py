@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Table, Column, Integer, String,\
      ForeignKey, MetaData, select, exc
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import pandas as pd
@@ -213,7 +214,7 @@ def yelp_to_shodan():
 
 # Queries hosts table for ip_str which matches any yelp host ip_str
 # If a match is found, org_id and host_id are assigned in the yelp_hosts table
-def link_yelp_ids():
+def link_yelp_ids(ip_str, yelp_organisation_id, yelp_host_id):
     find_matching_host = session.query(Hosts).filter(
         Hosts.ip_str == ip_str).one_or_none()
     if find_matching_host:
@@ -248,15 +249,15 @@ def insert_new_org(org):
 
 
 # Checks if ip_str already exists in hosts table,
-# if so returns ID, otherwise passes variables to next function
-def check_host(ip_str, asn, city, country_code, org_id):
+# if so returns ID, otherwise returns None
+def check_host(ip_str):
     hostIDResult = session.query(Hosts).filter(
         Hosts.ip_str == ip_str).one_or_none()
     if hostIDResult is None:
-        host_id = insert_new_host(ip_str, asn, country_code, city, org_id)
+        return None
     else:
         host_id = hostIDResult.id
-    return host_id
+        return host_id
 
 
 # Inserts new hosts into hosts table, returns ID
@@ -270,30 +271,27 @@ def insert_new_host(ip_str, asn, country_code, city, org_id):
     return host_id
 
 
-# Checks if service already exists by matching shodan_id,
-# If so, a timestamp from the original entry is compared to the current service
-# If the timestamp is more recent, the variables are passed to the
-# update_existing_service function.
-# If the timestamp is the same, the service_id is returned.
-# If the service doesn't exist, it is passed to the next function.
-def check_service(
-        shodan_module, port, transport, product, hostname,
-        domain, data, timestamp, shodan_id, vendor_id,
-        org, org_id, host_id):
+# If the service doesn't exist, None is returned.
+# Else, the service_id is returned.
+def check_service(shodan_id):
     shodanIDCheck = session.query(Services).filter(
         Services.shodan_id == shodan_id).one_or_none()
     if shodanIDCheck is None:
-        service_id = insert_new_service(
-            port, transport, product, shodan_module, hostname, domain, data,
-            timestamp, shodan_id, vendor_id, org_id, host_id, org)
-    elif timestamp > shodanIDCheck.created:
-        service_id = shodanIDCheck.id
-        update_existing_service(
-            port, transport, product, shodan_module, hostname, domain,
-            data, timestamp, shodan_id, vendor_id, service_id)
+        return None  # , None?
     else:
         service_id = shodanIDCheck.id
     return service_id
+
+
+# Checks if service already exists by matching shodan_id,
+# If so, a timestamp from the original entry is compared to the current service
+# If the timestamp is more recent, the function returns updated
+def check_service_timestamp(timestamp, service_id):
+    timestamp_check = session.query(Services).filter(
+        Services.service_id == service_id).one_or_none()
+    if timestamp > timestamp_check.created:
+        updated = True
+        return updated
 
 
 # Inserts new service into database and returns service_id
@@ -334,15 +332,14 @@ def update_existing_service(
 # Checks if vuln already exists in database by attempting to match current cve
 # and service_id to entries in vulns table.
 # If none, variables are passed to next function.
-def check_vulns(
-    cve, cvss, summary, reference, verified,
-        org_id, host_id, service_id):
-    vuln_check = session.query(Vulns).filter(Vulns.cve == cve).filter(
-        Vulns.service_id == service_id).one_or_none()
-    if vuln_check is None:
-        insert_new_vulns(
-            cve, cvss, summary, reference, verified,
-            org_id, host_id, service_id)
+def check_vulns(cve, service_id):
+    try:
+        vuln_check = session.query(Vulns).filter(Vulns.cve == cve).filter(
+            Vulns.service_id == service_id).one_or_none()
+        if vuln_check is None:
+            return None
+    except MultipleResultsFound:
+        return 1
 
 
 # Inserts new vulns into database
