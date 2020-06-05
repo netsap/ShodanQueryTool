@@ -8,3 +8,4 @@ prototypes
 *.csv
 queries
 *.json
+*.gz
