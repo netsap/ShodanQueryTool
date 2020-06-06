@@ -5,7 +5,8 @@ from os import path
 from database import check_org, check_host, check_service,\
     query_input, check_vulns, write_log_file,\
     log_no_shodan_id, host_search_query, insert_new_host,\
-    insert_new_service, update_existing_service, insert_new_vulns
+    insert_new_service, update_existing_service, insert_new_vulns, \
+    check_service_timestamp
 
 # Initialises Shodan with API key
 api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
@@ -60,11 +61,6 @@ def search(query):
         except KeyError as e:
             print(f'No response, pausing requests for 1 second')
             sleep(1)
-    try:
-        if write_log_file.called is True:
-            print('Entries added to log.txt')
-    except AttributeError:
-        pass
 
 
 # Uses api.host to search for indivdual IPs listed in hosts text file,
@@ -103,11 +99,11 @@ def sort_results(result, host_search=False):
 # after additional variables are returned, passes variables to
 # pass_data_to_database.
 def parse_search_results(result, org, org_id, ip_str, asn):
-    resultLocation = result['location']
-    city = resultLocation.get("city", "n/a")
-    country_code = resultLocation.get("country_code", "n/a")
+    result_location = result['location']
+    city = result_location.get("city", "n/a")
+    country_code = result_location.get("country_code", "n/a")
     timestamp = result["timestamp"]
-    host_id = check_host(ip_str, asn, city, country_code, org_id)
+    host_id = check_host(ip_str)
     if host_id is None:
         host_id = insert_new_host(ip_str, asn, country_code, city, org_id)
     shodan_module, port, transport, product, vendor_id, data,\

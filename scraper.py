@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen, HTTPError
+from urllib.request import urlopen
+from urllib.error import HTTPError
 from time import sleep
 from re import compile, search
 from database import yelp_check_org, yelp_check_url, yelp_check_host

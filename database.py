@@ -15,7 +15,6 @@ session = Session()
 
 # Notify if any results have been logged
 def write_log_file(log_string):
-    write_log_file.called = True
     with open('log.txt', 'a') as logFile:
         logFile.write(log_string)
 
@@ -277,7 +276,7 @@ def check_service(shodan_id):
     shodanIDCheck = session.query(Services).filter(
         Services.shodan_id == shodan_id).one_or_none()
     if shodanIDCheck is None:
-        return None  # , None?
+        return None
     else:
         service_id = shodanIDCheck.id
     return service_id
@@ -288,7 +287,7 @@ def check_service(shodan_id):
 # If the timestamp is more recent, the function returns updated
 def check_service_timestamp(timestamp, service_id):
     timestamp_check = session.query(Services).filter(
-        Services.service_id == service_id).one_or_none()
+        Services.id == service_id).one_or_none()
     if timestamp > timestamp_check.created:
         updated = True
         return updated
