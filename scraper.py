@@ -76,6 +76,7 @@ def find_external_links(soup, yelp_url_bak, url_selector, yelp_url):
             site_title = soup.find('h1')
             site_name = site_title.next
             print(site_name)
+            # The following regex formula was taken from the link below
             # https://www.regextester.com/105075
             reg_url = search(
                 r'^(http:\/\/|https:\/\/)?([a-zA-Z0-9-_]+\.)'
