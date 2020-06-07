@@ -156,6 +156,7 @@ def data_extraction(result):
         hostname = "n/a"
     if hostname is None or hostname == "":
         hostname = "n/a"
+    # lines 162 - 165 were taken from:
     # https://github.com/cudeso/tools/blob/master/shodan-asset-monitor/shodan-asset-monitor.py
     # Clean up unwanted strings from product and vendor
     product = product.strip(
