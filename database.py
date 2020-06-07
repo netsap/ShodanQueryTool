@@ -110,9 +110,9 @@ class YelpHosts(Base):
 Base.metadata.create_all(engine)
 
 # Blacklisted words for the 'query' function
-input_blacklist = ['UPDATE', 'DELETE', 'INSERT', 'CREATE DATABASE',
+input_blacklist = {'UPDATE', 'DELETE', 'INSERT', 'CREATE DATABASE',
                    'CREATE TABLE', 'ALTER DATABASE', 'DROP TABLE',
-                   'ALTER TABLE', 'CREATE INDEX', 'DROP INDEX']
+                   'ALTER TABLE', 'CREATE INDEX', 'DROP INDEX'}
 
 
 # Recives query input, and runs code as required
@@ -121,9 +121,11 @@ def query_input():
     while True:
         query = input(
             '\nType your Query Below to exit type \'exit\' \n').upper()
-        if query in input_blacklist:
-            print('You may only write select statements')
-        elif query == 'EXIT':
+        for command in input_blacklist:
+            if query.find(command) != -1:
+                print('You may only write select statements')
+                return
+        if query == 'EXIT':
             exit()
         else:
             output_data(engine, query)

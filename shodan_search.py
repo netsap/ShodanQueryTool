@@ -38,8 +38,8 @@ def host_file_parser(host_file_path='hosts.txt'):
 # passes each result of the query to sort_results
 def search(query):
     first_run = True
-    page_number = 1040
-    total_pages = 1042
+    page_number = 0
+    total_pages = 1
     print(f'Searching Shodan for {query}')
     while page_number <= total_pages:
         try:
@@ -219,4 +219,4 @@ def parse_vulns(vulns):
 
 # If this file is called individually, run this function
 if __name__ == '__main__':
-    host_file_parser()
+    query_file_parser()
