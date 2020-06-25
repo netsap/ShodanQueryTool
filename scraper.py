@@ -11,7 +11,7 @@ from socket import gaierror
 # Makes request to Yelp, creates soup, passes soup to next function
 def yelp_result_scraper():
     count = 0
-    while count < 990:  # 990 is the last page
+    while count <= 990:  # 990 is the last page
         unformatted_urls = []
         pageURL = 'https://www.yelp.co.uk/search?find_desc=&find_loc='\
             'Leeds%2C%20West%20Yorkshire&start=' + str(count)
