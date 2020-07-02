@@ -9,7 +9,7 @@ from database import check_org, check_host, check_service,\
     check_service_timestamp
 
 # Initialises Shodan with API key
-api = shodan.Shodan("95vvRQj3igAqbCNSpdHMjHC6MlvB1hJD")
+api = shodan.Shodan("Kp5fAo125GbATQQ5p1A5xSojAS4SUbt9")
 
 
 # Opens file path passed via qtool or uses "ShodanQueries" as default
@@ -56,6 +56,9 @@ def search(query):
             for result in results['matches']:
                 sort_results(result)
         except shodan.exception.APIError as e:
+            if e.value == 'Invalid API key':
+                print('Invalid API key')
+                exit()
             print(f'Timeout, pausing requests for 1 second')
             sleep(1)
         except KeyError as e:
